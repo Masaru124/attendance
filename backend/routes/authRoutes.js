@@ -1,21 +1,30 @@
-import express from 'express';
-import { loginUser } from '../models/UserModel.js';
+const express = require('express');
+const { loginUser, registerUser } = require('../models/UserModel');
 
 const router = express.Router();
 
+router.post('/register', async (req, res) => {
+  const { email, usn, password } = req.body;
+  try {
+    const user = await registerUser(email, usn, password);
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error during registration' });
+  }
+});
+
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await loginUser(email, password);
     if (user) {
-      res.status(200).json(user); // You might want to omit the password in a real app
+      res.status(200).json(user); // Exclude password in response
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 
-export default router;
+module.exports = router;

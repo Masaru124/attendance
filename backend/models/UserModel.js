@@ -1,33 +1,54 @@
-// backend/models/UserModel.js
-import { Pool } from 'pg';
-import bcrypt from 'bcrypt';
+const mysql = require('mysql');
+const bcrypt = require('bcrypt');
 
-const pool = new Pool({
-  user: 'your_username',
+// Create a MySQL connection pool
+const pool = mysql.createPool({
+  connectionLimit: 10,
   host: 'localhost',
-  database: 'your_database',
-  password: 'your_password',
-  port: 5432,
+  user: 'root',
+  password: '',
+  database: 'attendance_db'
 });
 
+// Helper function to query the database with promises
+const query = (sql, values) => {
+  return new Promise((resolve, reject) => {
+    pool.query(sql, values, (error, results) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve(results);
+    });
+  });
+};
+
 // Register a new user
-export const registerUser = async (email, usn, password) => {
+const registerUser = async (email, usn, password) => {
   const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
-  const query = 'INSERT INTO users (email, usn, password) VALUES ($1, $2, $3) RETURNING *';
+  const sql = 'INSERT INTO users (email, usn, password) VALUES (?, ?, ?)';
   const values = [email, usn, hashedPassword];
-  const result = await pool.query(query, values);
-  return result.rows[0];
+  const result = await query(sql, values);
+  // Return the inserted user id and email, usn (excluding password)
+  return { id: result.insertId, email, usn };
 };
 
 // Login user
-export const loginUser = async (email, password) => {
-  const query = 'SELECT * FROM users WHERE email = $1';
+const loginUser = async (email, password) => {
+  const sql = 'SELECT * FROM users WHERE email = ?';
   const values = [email];
-  const result = await pool.query(query, values);
-
-  const user = result.rows[0];
+  const results = await query(sql, values);
+  const user = results[0];
   if (!user) return null;
 
   const isMatch = await bcrypt.compare(password, user.password);
-  return isMatch ? user : null;
+  if (!isMatch) return null;
+
+  // Exclude password from returned user object
+  const { password: pwd, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+};
+
+module.exports = {
+  registerUser,
+  loginUser
 };
