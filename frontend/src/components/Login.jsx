@@ -16,6 +16,8 @@ function Login() {
       });
       console.log("Logged in user:", res.data);
       const user = res.data;
+      // Store user info in localStorage
+      localStorage.setItem("user", JSON.stringify(user));
       if (!user.profile_completed) {
         navigate("/profile-setup");
       } else if (user.role === "Teacher") {

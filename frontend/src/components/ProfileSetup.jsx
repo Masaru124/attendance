@@ -11,9 +11,14 @@ function ProfileSetup() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     try {
-      // Assuming user ID or token is available for authentication
-      // For simplicity, using a placeholder userId
-      const userId = 1; // Replace with actual user ID or get from auth context
+      // Get userId from localStorage
+      const user = JSON.parse(localStorage.getItem("user"));
+      if (!user || !user.id) {
+        console.error("User not logged in");
+        navigate("/login");
+        return;
+      }
+      const userId = user.id;
 
       const res = await axios.post(`http://localhost:1516/api/profile/setup`, {
         userId,
@@ -23,6 +28,10 @@ function ProfileSetup() {
       });
 
       if (res.status === 200) {
+        // Update localStorage user profile_completed to true
+        user.profile_completed = true;
+        localStorage.setItem("user", JSON.stringify(user));
+
         // Redirect to dashboard based on role after profile completion
         const role = res.data.role;
         if (role === "Teacher") {
