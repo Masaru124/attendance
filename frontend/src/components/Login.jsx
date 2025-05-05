@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";  // Import Link to navigate
+import { Link, useNavigate } from "react-router-dom";  // Import Link and useNavigate
 import axios from "axios"; // Import axios for making HTTP requests
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -14,7 +15,17 @@ function Login() {
         password,
       });
       console.log("Logged in user:", res.data);
-      // Handle successful login (e.g., redirect to dashboard)
+      const user = res.data;
+      if (!user.profile_completed) {
+        navigate("/profile-setup");
+      } else if (user.role === "Teacher") {
+        navigate("/teacher-dashboard");
+      } else if (user.role === "Student") {
+        navigate("/student-dashboard");
+      } else {
+        // Default fallback
+        navigate("/login");
+      }
     } catch (error) {
       console.error("Login failed:", error.response?.data || error.message);
     }

@@ -1,42 +1,34 @@
-const mysql = require('mysql');
+require("dotenv").config();
+const { neon } = require("@neondatabase/serverless");
 const bcrypt = require('bcrypt');
 
-// Create a MySQL connection pool
-const pool = mysql.createPool({
-  connectionLimit: 10,
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'attendance_db'
-});
+const sql = neon(process.env.DATABASE_URL);
 
 // Helper function to query the database with promises
-const query = (sql, values) => {
-  return new Promise((resolve, reject) => {
-    pool.query(sql, values, (error, results) => {
-      if (error) {
-        return reject(error);
-      }
-      resolve(results);
-    });
-  });
+const query = async (queryString, values) => {
+  try {
+    const result = await sql.unsafe(queryString, values);
+    return result;
+  } catch (error) {
+    throw error;
+  }
 };
 
-// Register a new user
-const registerUser = async (email, usn, password) => {
+// Register a new user with role and profile completion status
+const registerUser = async (email, usn, password, role) => {
   const hashedPassword = await bcrypt.hash(password, 10); // 10 = salt rounds
-  const sql = 'INSERT INTO users (email, usn, password) VALUES (?, ?, ?)';
-  const values = [email, usn, hashedPassword];
-  const result = await query(sql, values);
-  // Return the inserted user id and email, usn (excluding password)
-  return { id: result.insertId, email, usn };
+  const queryString = 'INSERT INTO users (email, usn, password, role, profile_completed) VALUES ($1, $2, $3, $4, $5) RETURNING id';
+  const values = [email, usn, hashedPassword, role, false];
+  const result = await query(queryString, values);
+  // Return the inserted user id, email, usn, role, and profile_completed (excluding password)
+  return { id: result[0].id, email, usn, role, profile_completed: false };
 };
 
 // Login user
 const loginUser = async (email, password) => {
-  const sql = 'SELECT * FROM users WHERE email = ?';
+  const queryString = 'SELECT * FROM users WHERE email = $1';
   const values = [email];
-  const results = await query(sql, values);
+  const results = await query(queryString, values);
   const user = results[0];
   if (!user) return null;
 

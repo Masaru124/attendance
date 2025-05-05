@@ -1,13 +1,29 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";  // Import Link to navigate
+import { Link, useNavigate } from "react-router-dom";  // Import Link and useNavigate
+import axios from "axios";
 
 function Signup() {
   const [email, setEmail] = useState("");
   const [usn, setUSN] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Student"); // Default role
+  const navigate = useNavigate();
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:1516/api/auth/register", {
+        email,
+        usn,
+        password,
+        role,
+      });
+      console.log("Registered user:", res.data);
+      // Redirect to login after successful signup
+      navigate("/login");
+    } catch (error) {
+      console.error("Registration failed:", error.response?.data || error.message);
+    }
   };
 
   return (
@@ -49,6 +65,19 @@ function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="role" className="block text-gray-700 font-semibold mb-2">Role</label>
+            <select
+              id="role"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:outline-none"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+            </select>
           </div>
 
           <button

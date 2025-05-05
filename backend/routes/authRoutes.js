@@ -4,9 +4,9 @@ const { loginUser, registerUser } = require('../models/UserModel');
 const router = express.Router();
 
 router.post('/register', async (req, res) => {
-  const { email, usn, password } = req.body;
+  const { email, usn, password, role } = req.body;
   try {
-    const user = await registerUser(email, usn, password);
+    const user = await registerUser(email, usn, password, role);
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ error: 'Server error during registration' });
